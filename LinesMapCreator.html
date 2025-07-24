@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width">
+  <title>Lines Map Creator</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: sans-serif;
+    }
+
+    body {
+      background: linear-gradient(135deg, #1a2a6c, #2c3e50, #1a2a6c);
+      color: white;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 30px;
+      padding: 20px;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 15px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+
+    .help-btn {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      z-index: 10;
+    }
+
+    .help-btn:hover {
+      background: rgba(255, 255, 255, 0.3);
+      transform: scale(1.1);
+    }
+
+    .help-content {
+      position: absolute;
+      top: 70px;
+      right: 0;
+      width: 300px;
+      background: rgba(0, 0, 0, 0.8);
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      z-index: 100;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(-10px);
+      transition: all 0.3s ease;
+    }
+
+    .help-btn:hover+.help-content,
+    .help-content:hover {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
+    }
+
+    .help-content h3 {
+      color: #4d9de0;
+      margin-bottom: 15px;
+      font-size: 1.3rem;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .help-content ul {
+      padding-left: 20px;
+    }
+
+    .help-content li {
+      margin-bottom: 12px;
+      line-height: 1.5;
+      font-size: 0.95rem;
+    }
+
+    h1 {
+      font-size: 2.8rem;
+      margin-bottom: 10px;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+    }
+
+    .app-container {
+      display: flex;
+      gap: 25px;
+    }
+
+    .control-panel {
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 15px;
+      padding: 25px;
+      width: 300px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      flex-direction: column;
+      gap: 25px;
+    }
+
+    .panel-section {
+      background: rgba(0, 0, 0, 0.2);
+      padding: 20px;
+      border-radius: 10px;
+    }
+
+    .panel-title {
+      font-size: 1.3rem;
+      margin-bottom: 15px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .input-group {
+      margin-bottom: 15px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+
+    input[type="number"] {
+      width: 100%;
+      padding: 12px;
+      border-radius: 8px;
+      border: none;
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+      font-size: 1.1rem;
+    }
+
+    input[type="number"]:focus {
+      outline: 2px solid #4d9de0;
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    .btn {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 8px;
+      background: #4d9de0;
+      color: white;
+      font-size: 1.1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin-top: 5px;
+      text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn:hover {
+      background: #3a7dbd;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+
+    .btn-export {
+      background: #4CAF50;
+    }
+
+    .btn-export:hover {
+      background: #3d8b40;
+    }
+
+    .btn-import {
+      background: #FF9800;
+    }
+
+    .btn-import:hover {
+      background: #e68a00;
+    }
+
+    .btn-reset {
+      background: #f44336;
+    }
+
+    .btn-reset:hover {
+      background: #d32f2f;
+    }
+
+    #file-input {
+      display: none;
+    }
+
+    .map-container {
+      flex: 1;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 15px;
+      padding: 20px;
+      overflow: auto;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .map-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding: 0 10px;
+    }
+
+    .current-status {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .current-status-box {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 1.2rem;
+      box-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
+    }
+
+    .map-grid {
+      display: inline-block;
+      border: 3px solid rgba(255, 255, 255, 0.2);
+      border-radius: 5px;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+      background: rgba(0, 0, 0, 0.4);
+      margin: 0 auto;
+    }
+
+    .map-row {
+      display: flex;
+    }
+
+    .map-cell {
+      width: 40px;
+      height: 40px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 14px;
+      transition: all 0.2s ease;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+      position: relative;
+    }
+
+    .map-cell:hover {
+      transform: scale(1.1);
+      z-index: 2;
+      box-shadow: 0 0 15px rgba(255, 255, 255, 0.4);
+    }
+
+    .status-picker {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+
+    .status-option {
+      height: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 18px;
+      transition: all 0.2s ease;
+      border: 2px solid transparent;
+    }
+
+    .status-option:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 15px rgba(255, 255, 255, 0.4);
+    }
+
+    .status-option.active {
+      border: 3px solid white;
+      box-shadow: 0 0 20px rgba(255, 255, 255, 0.6);
+    }
+
+    .status-0 {
+      background: #2c3e50;
+    }
+
+    .rule-section h4 {
+      color: #4d9de0;
+      margin-bottom: 8px;
+    }
+
+    .number-counts {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-top: 15px;
+    }
+
+    .number-item {
+      display: flex;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.1);
+      padding: 8px;
+      border-radius: 6px;
+    }
+
+    .number-color {
+      width: 25px;
+      height: 25px;
+      border-radius: 4px;
+      margin-right: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 0.9rem;
+    }
+
+    footer {
+      text-align: center;
+      margin-top: 10px;
+      padding: 20px;
+      font-size: 0.9rem;
+      opacity: 0.8;
+    }
+
+    .notification {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 15px 25px;
+      border-radius: 8px;
+      background: rgba(0, 0, 0, 0.7);
+      color: white;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+      transform: translateX(200%);
+      transition: transform 0.4s ease;
+      z-index: 1000;
+    }
+
+    .notification.show {
+      transform: translateX(0);
+    }
+
+    .notification.error {
+      border-left: 4px solid #f44336;
+    }
+
+    .notification.success {
+      border-left: 4px solid #4CAF50;
+    }
+
+    @media (max-width: 1100px) {
+      .app-container {
+        flex-direction: column;
+      }
+
+      .control-panel {
+        width: 100%;
+      }
+
+      .map-grid {
+        max-width: 100%;
+        overflow-x: auto;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <header>
+      <h1>Lines Map Creator</h1>
+    </header>
+
+    <div class="app-container">
+      <div class="control-panel">
+        <div class="panel-section">
+          <h2 class="panel-title">📏 地图设置</h2>
+          <div class="input-group">
+            <label for="width">地图宽度 (4-15):</label>
+            <input type="number" id="width" min="4" max="15" value="10">
+          </div>
+          <div class="input-group">
+            <label for="height">地图高度 (1-15):</label>
+            <input type="number" id="height" min="1" max="15" value="10">
+          </div>
+          <button id="create-btn" class="btn">
+            🔄 创建地图
+          </button>
+        </div>
+
+        <div class="panel-section">
+
+          <h2 class="panel-title">🎨 状态选择</h2>
+          <div class="status-picker" id="status-picker">
+            <!-- 状态选项将通过JS生成 -->
+          </div>
+        </div>
+      </div>
+
+      <div class="map-container">
+        <div class="map-header">
+          <h2>🌎 地图编辑区域</h2>
+          <div class="help-btn">❓</div>
+          <div class="help-content">
+            <h3>📜 地图编辑规则</h3>
+            <ul>
+              <li>设置地图尺寸后点击"创建地图"</li>
+              <li>在右侧选择要绘制的状态（0-16）</li>
+              <li>点击地图单元格应用当前状态</li>
+              <li>按住鼠标拖动可连续绘制</li>
+              <li>前一个数字填满两个才能填下一个数字</li>
+              <li>每个数字最多只能填两个</li>
+              <li>使用导出/导入功能保存和加载地图</li>
+            </ul>
+          </div>
+          <div class="current-status">
+            <span>当前状态:</span>
+            <div class="current-status-box" id="current-status-box">0</div>
+          </div>
+        </div>
+
+        <div class="map-grid" id="map-grid">
+          <!-- 地图网格将通过JS生成 -->
+        </div>
+
+        <div class="number-counts" id="number-counts">
+          <!-- 数字计数将通过JS生成 -->
+        </div>
+      </div>
+
+      <div class="control-panel">
+        <div class="panel-section">
+          <h2 class="panel-title">💾 数据操作</h2>
+          <button id="import-btn" class="btn btn-import">
+            ⬆️ 导入地图数据
+          </button>
+          <button id="export-json-btn" class="btn btn-export">
+            ⬇️ 导出地图数据.json
+          </button>
+          <button id="export-txt-btn" class="btn btn-export">
+            ⬇️ 导出地图数据.txt
+          </button>
+          <input type="file" id="file-input" accept=".json,.txt">
+          <button id="reset-btn" class="btn btn-reset">
+            🗑️ 重置地图
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <p>Lines Map Creator | 支持自定义尺寸 | 可导出导入地图数据</p>
+    </footer>
+
+    <div class="notification" id="notification">
+      操作成功！
+    </div>
+  </div>
+
+  <script>
+    // 状态颜色配置
+    const statusColors = [
+      '#2c3e50',   // 0: 深蓝色
+      '#e74c3c',   // 1: 红色
+      '#3498db',   // 2: 蓝色
+      '#2ecc71',   // 3: 绿色
+      '#f1c40f',   // 4: 黄色
+      '#9b59b6',   // 5: 紫色
+      '#1abc9c',   // 6: 青色
+      '#e67e22',   // 7: 橙色
+      '#34495e',   // 8: 深灰色
+      '#d35400',   // 9: 深橙色
+      '#27ae60',   // 10: 深绿色
+      '#8e44ad',   // 11: 深紫色
+      '#16a085',   // 12: 深青色
+      '#c0392b',   // 13: 深红色
+      '#2980b9',   // 14: 深蓝色
+      '#f39c12',   // 15: 金色
+      '#7f8c8d'    // 16: 灰色
+    ];
+
+    // 当前选中的状态
+    let currentStatus = 1;
+    // 地图数据
+    let mapData = [];
+    // 是否正在拖动
+    let isDragging = false;
+    // 数字计数
+    let numberCounts = Array(17).fill(0);
+    // 下一个可用的数字
+    let nextAvailableNumber = 1;
+
+    // 初始化
+    document.addEventListener('DOMContentLoaded', () => {
+      // 初始化状态选择器
+      initStatusPicker();
+      // 初始化数字计数显示
+      initNumberCounts();
+      // 创建默认地图
+      createMap(10, 10);
+      // 设置事件监听器
+      setupEventListeners();
+    });
+
+    // 初始化状态选择器
+    function initStatusPicker() {
+      const picker = document.getElementById('status-picker');
+
+      for (let i = 1; i <= 16; i++) {
+        const statusOption = document.createElement('div');
+        statusOption.className = `status-option status-${i}`;
+        statusOption.style.backgroundColor = statusColors[i];
+        statusOption.textContent = i;
+        statusOption.dataset.status = i;
+
+        if (i === currentStatus) {
+          statusOption.classList.add('active');
+        }
+
+        statusOption.addEventListener('click', () => {
+          if (i > 0) {
+            if (i > nextAvailableNumber) {
+              showNotification(`请先完成数字${nextAvailableNumber}（需要放置2个）`, "error");
+              return;
+            }
+
+            if (numberCounts[i] >= 2) {
+              showNotification(`数字${i}已达到最大数量（2个）`, "error");
+              return;
+            }
+          }
+
+          currentStatus = i;
+          document.getElementById('current-status-box').textContent = i;
+          document.getElementById('current-status-box').style.backgroundColor = statusColors[i];
+
+          document.querySelectorAll('.status-option').forEach(opt => {
+            opt.classList.remove('active');
+          });
+          statusOption.classList.add('active');
+        });
+
+        picker.appendChild(statusOption);
+      }
+    }
+
+    // 初始化数字计数显示
+    function initNumberCounts() {
+      const container = document.getElementById('number-counts');
+
+      for (let i = 1; i <= 16; i++) {
+        const item = document.createElement('div');
+        item.className = 'number-item';
+
+        const colorBox = document.createElement('div');
+        colorBox.className = 'number-color';
+        colorBox.style.backgroundColor = statusColors[i];
+        colorBox.textContent = i;
+
+        const countText = document.createElement('span');
+        countText.className = 'count-text';
+        countText.textContent = `已放置: 0/2`;
+        countText.id = `count-${i}`;
+
+        item.appendChild(colorBox);
+        item.appendChild(countText);
+        container.appendChild(item);
+      }
+    }
+
+    // 更新数字计数显示
+    function updateNumberCounts() {
+      for (let i = 1; i <= 16; i++) {
+        const countElement = document.getElementById(`count-${i}`);
+        if (countElement) {
+          countElement.textContent = `已放置: ${numberCounts[i]}/2`;
+
+          if (numberCounts[i] === 2) {
+            countElement.style.color = '#2ecc71';
+          } else {
+            countElement.style.color = 'white';
+          }
+        }
+      }
+
+      // 更新下一个可用数字
+      nextAvailableNumber = 1;
+      for (let i = 1; i <= 16; i++) {
+        if (numberCounts[i] < 2) {
+          nextAvailableNumber = i;
+          break;
+        }
+      }
+    }
+
+    // 创建地图
+    function createMap(width, height) {
+      const mapGrid = document.getElementById('map-grid');
+      mapGrid.innerHTML = '';
+
+      // 重置数字计数
+      numberCounts = Array(17).fill(0);
+      updateNumberCounts();
+
+      // 初始化地图数据
+      mapData = [];
+
+      for (let y = 0; y < height; y++) {
+        const row = document.createElement('div');
+        row.className = 'map-row';
+
+        const dataRow = [];
+
+        for (let x = 0; x < width; x++) {
+          const cell = document.createElement('div');
+          cell.className = 'map-cell';
+          cell.dataset.x = x;
+          cell.dataset.y = y;
+          cell.dataset.status = 0;
+          cell.style.backgroundColor = statusColors[0];
+
+          // 添加事件监听器
+          cell.addEventListener('mousedown', startDrawing);
+          cell.addEventListener('mouseenter', draw);
+          cell.addEventListener('mouseup', stopDrawing);
+
+          row.appendChild(cell);
+          dataRow.push(0);
+        }
+
+        mapGrid.appendChild(row);
+        mapData.push(dataRow);
+      }
+    }
+
+    // 开始绘制
+    function startDrawing(e) {
+      isDragging = true;
+      updateCell(e.target);
+    }
+
+    // 绘制中
+    function draw(e) {
+      if (isDragging) {
+        updateCell(e.target);
+      }
+    }
+
+    // 停止绘制
+    function stopDrawing() {
+      isDragging = false;
+    }
+
+    // 更新单元格
+    function updateCell(cell) {
+      const x = parseInt(cell.dataset.x);
+      const y = parseInt(cell.dataset.y);
+      const currentCellStatus = parseInt(cell.dataset.status);
+
+      // 如果新状态和当前状态相同，不做操作
+      if (currentCellStatus === currentStatus) {
+        if (currentStatus > 0) {
+          if (currentCellStatus > 0) {
+            numberCounts[currentCellStatus]--;
+          }
+          cell.dataset.status = 0;
+          cell.textContent = '';
+          cell.style.backgroundColor = statusColors[0];
+        }
+      } else {
+        // 特殊规则检查
+        if (currentStatus > 0) {
+          // 检查是否满足顺序规则
+          if (currentStatus > nextAvailableNumber) {
+            showNotification(`请先完成数字${nextAvailableNumber}（需要放置2个）`, "error");
+            return;
+          }
+
+          // 检查是否达到最大数量
+          if (numberCounts[currentStatus] >= 2) {
+            showNotification(`数字${currentStatus}已达到最大数量（2个）`, "error");
+            return;
+          }
+        }
+
+        // 减少原状态的计数
+        if (currentCellStatus > 0) {
+          numberCounts[currentCellStatus]--;
+        }
+
+        // 增加新状态的计数
+        if (currentStatus > 0) {
+          numberCounts[currentStatus]++;
+        }
+
+        // 更新UI
+        cell.dataset.status = currentStatus;
+        cell.textContent = currentStatus === 0 ? '' : currentStatus;
+        cell.style.backgroundColor = statusColors[currentStatus];
+
+        // 更新数据
+        mapData[y][x] = currentStatus;
+      }
+
+      // 更新计数显示
+      updateNumberCounts();
+    }
+
+    // 设置事件监听器
+    function setupEventListeners() {
+      // 创建地图按钮
+      document.getElementById('create-btn').addEventListener('click', () => {
+        const width = parseInt(document.getElementById('width').value) || 10;
+        const height = parseInt(document.getElementById('height').value) || 10;
+
+        // 限制尺寸范围
+        const clampedWidth = Math.min(Math.max(width, 4), 15);
+        const clampedHeight = Math.min(Math.max(height, 1), 15);
+
+        document.getElementById('width').value = clampedWidth;
+        document.getElementById('height').value = clampedHeight;
+
+        createMap(clampedWidth, clampedHeight);
+        showNotification(`已创建 ${clampedWidth}×${clampedHeight} 地图`, "success");
+      });
+
+      // 导出按钮
+      document.getElementById('export-json-btn').addEventListener('click', () => {
+        const data = {
+          width: mapData[0].length,
+          height: mapData.length,
+          data: mapData
+        };
+
+        const json = JSON.stringify(data, null, 2);
+        const blob = new Blob([json], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `map-${new Date().toISOString().slice(0, 10)}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        showNotification("地图数据已导出", "success");
+      });
+
+      // 导出txt按钮
+      document.getElementById('export-txt-btn').addEventListener('click', () => {
+        const width = mapData[0].length;
+        const height = mapData.length;
+
+        // 计算已使用的数字类型数量
+        updateNumberCounts();
+
+        // 准备导出数据
+        let exportData = `${width} ${height} ${nextAvailableNumber - 1}`;
+
+        // 添加地图数据
+        for (let y = 0; y < height; y++) {
+          for (let x = 0; x < width; x++) {
+            exportData += ` ${mapData[y][x]}`;
+          }
+        }
+
+        const blob = new Blob([exportData], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `map-${new Date().toISOString().slice(0, 10)}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      });
+
+      // 导入按钮
+      document.getElementById('import-btn').addEventListener('click', () => {
+        document.getElementById('file-input').click();
+      });
+
+      // 文件输入
+      document.getElementById('file-input').addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          try {
+            const data = JSON.parse(event.target.result);
+            if (data.width && data.height && data.data) {
+              // 检查尺寸是否有效
+              const width = Math.min(Math.max(data.width, 3), 40);
+              const height = Math.min(Math.max(data.height, 1), 30);
+
+              document.getElementById('width').value = width;
+              document.getElementById('height').value = height;
+
+              createMap(width, height);
+
+              // 应用导入的数据
+              setTimeout(() => {
+                // 重置数字计数
+                numberCounts = Array(17).fill(0);
+
+                for (let y = 0; y < height; y++) {
+                  for (let x = 0; x < width; x++) {
+                    let status = 0;
+                    if (y < data.data.length && x < data.data[y].length) {
+                      status = data.data[y][x];
+                    }
+
+                    // 更新计数
+                    if (status > 0) {
+                      numberCounts[status]++;
+                    }
+
+                    const cell = document.querySelector(`.map-cell[data-x="${x}"][data-y="${y}"]`);
+
+                    if (cell) {
+                      cell.dataset.status = status;
+                      cell.textContent = status === 0 ? '' : status;
+                      cell.style.backgroundColor = statusColors[status];
+                      mapData[y][x] = status;
+                    }
+                  }
+                }
+
+                // 更新计数显示
+                updateNumberCounts();
+
+                showNotification("地图数据已导入", "success");
+              }, 100);
+            }
+          } catch (error) {
+            try {
+              const text = event.target.result.trim();
+              const parts = text.split(/\s+/);
+
+              if (parts.length < 3) {
+                throw new Error("文件格式不正确");
+              }
+
+              // 解析前三个参数
+              const width = parseInt(parts[0]);
+              const height = parseInt(parts[1]);
+              colorTypeCount = parseInt(parts[2]);
+
+              // 验证尺寸
+              if (width < 3 || width > 40 || height < 1 || height > 30) {
+                throw new Error("地图尺寸无效");
+              }
+
+              // 计算所需数据长度
+              const expectedDataLength = width * height;
+              if (parts.length !== 3 + expectedDataLength) {
+                throw new Error("数据长度不匹配");
+              }
+
+              // 更新地图尺寸
+              document.getElementById('width').value = width;
+              document.getElementById('height').value = height;
+
+              // 创建地图网格
+              createMap(width, height);
+
+              // 应用导入的数据
+              setTimeout(() => {
+                // 重置数字计数
+                numberCounts = Array(17).fill(0);
+
+                let dataIndex = 3;
+                for (let y = 0; y < height; y++) {
+                  for (let x = 0; x < width; x++) {
+                    const status = parseInt(parts[dataIndex++]);
+
+                    // 更新计数
+                    if (status > 0) {
+                      numberCounts[status]++;
+                    }
+
+                    const cell = document.querySelector(`.map-cell[data-x="${x}"][data-y="${y}"]`);
+
+                    if (cell) {
+                      cell.dataset.status = status;
+                      cell.textContent = status === 0 ? '' : status;
+                      cell.style.backgroundColor = statusColors[status];
+                      mapData[y][x] = status;
+                    }
+                  }
+                }
+
+                // 更新计数显示
+                updateNumberCounts();
+
+                showNotification("地图数据已导入", "success");
+              }, 100);
+            } catch (error) {
+              showNotification(`导入失败: ${error.message}`, "error");
+              console.error(error);
+            }
+          }
+        };
+        reader.readAsText(file);
+      });
+
+      // 重置按钮
+      document.getElementById('reset-btn').addEventListener('click', () => {
+        if (confirm('确定要重置地图吗？所有数据将丢失！')) {
+          const width = parseInt(document.getElementById('width').value) || 15;
+          const height = parseInt(document.getElementById('height').value) || 10;
+          createMap(width, height);
+          showNotification("地图已重置", "success");
+        }
+      });
+
+      // 防止拖动时选中文本
+      document.addEventListener('mousedown', (e) => {
+        if (e.target.classList.contains('map-cell')) {
+          e.preventDefault();
+        }
+      });
+    }
+
+    // 显示通知
+    function showNotification(message, type = "success") {
+      const notification = document.getElementById('notification');
+      notification.textContent = message;
+      notification.className = 'notification';
+      notification.classList.add(type, 'show');
+
+      setTimeout(() => {
+        notification.classList.remove('show');
+      }, 3000);
+    }
+  </script>
+</body>
+
+</html>
